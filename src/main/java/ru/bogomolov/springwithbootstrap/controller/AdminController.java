@@ -60,8 +60,17 @@ public class AdminController {
 
             return ResponseEntity.badRequest().body(errors);
         }
-
-        userService.saveUser(user);
+        try {
+            userService.saveUser(user);
+        } catch (Exception save) {
+            bindingResult.addError(new ObjectError("username", "Пользователь с таким логином уже существует"));
+            List<String> errors = bindingResult.getAllErrors().stream()
+                    .map(error -> error instanceof FieldError ?
+                            ((FieldError) error).getField() + ": " + error.getDefaultMessage() :
+                            error.getDefaultMessage())
+                    .collect(Collectors.toList());
+            return ResponseEntity.badRequest().body(errors);
+        }
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -76,10 +85,9 @@ public class AdminController {
                     .collect(Collectors.toList());
             return ResponseEntity.badRequest().body(errors);
         }
-
-        if (userService.findByUsername(user.getUsername()) != null && userService.findByUsername(user.getUsername()).getId().equals(user.getId())) {
+        try {
             userService.update(id, user);
-        } else {
+        } catch (Exception update) {
             bindingResult.addError(new ObjectError("username", "Пользователь с таким логином существует"));
             List<String> errors = bindingResult.getAllErrors().stream()
                     .map(error -> error instanceof FieldError ?
